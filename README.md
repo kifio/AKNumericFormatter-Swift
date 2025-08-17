@@ -23,7 +23,9 @@ textField.numericFormatter = AKNumericFormatter.formatter(mask: "+1(999)*-**-**-
 ```
 Yep, it's easy and no subclassing.
 
-###Compatibility
+Compability
+------------
+
 Minimum supported iOS version is iOS 15 now. Maybe it can be less, but i have no devices to test.
 Public API may be a bit different with original library. Not drastically. I suppose it would take 5-7 minutes to completely replace the library in your code.
 
