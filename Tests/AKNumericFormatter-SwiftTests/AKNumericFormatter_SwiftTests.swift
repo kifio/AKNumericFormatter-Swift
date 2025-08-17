@@ -54,21 +54,20 @@ import XCTest
     @Test func testFormatString_withDigitPlaceholders_mixedMode() {
         let formatter = AKNumericFormatter.formatter(
             mask: "+1(xxx)xx-77-xx",
-            placeholder: Character("*"),
+            placeholder: Character("x"),
             mode: .mixed
         )
         
-        #expect(
-            formatter.format("1") == "+1("
-        )
-//        #expect(formatter.format("2") == "+1(2")
-//        #expect(formatter.format("23") == "+1(23")
-//        #expect(formatter.format("123") == "+1(23")
-//        #expect(formatter.format("123456") == "+1(234)56-77-")
-//        #expect(formatter.format("1234567") == "+1(234)56-77-")
-//        #expect(formatter.format("12345677") == "+1(234)56-77-")
-//        #expect(formatter.format("12345678") == "+1(234)56-77-8")
-//        #expect(formatter.format("123456778") == "+1(234)56-77-8")
+        #expect(formatter.format("1") == "+1(")
+        #expect(formatter.format("2") == "+1(2")
+        #expect(formatter.format("23") == "+1(23")
+        #expect(formatter.format("123") == "+1(23")
+        #expect(formatter.format("123456") == "+1(234)56-77-")
+        #expect(formatter.format("1234567") == "+1(234)56-77-")
+        #expect(formatter.format("12345677") == "+1(234)56-77-")
+        #expect(formatter.format("12345678") == "+1(234)56-77-8")
+        #expect(formatter.format("123456778") == "+1(234)56-77-8")
+        #expect(formatter.format("+afsf") == "")
     }
 
 
@@ -85,4 +84,5 @@ import XCTest
 func unfixedDigits() async throws {
     let formatter = AKNumericFormatter.formatter(mask: "+1(xxx)xx-77-xx", placeholder: Character("x"))
     #expect(throws: Never.self) { try formatter.unfixedDigits(string: "+1(234)56-77-89") == "2345689" }
+    #expect(throws: AKNumericFormatter.FormatError.notCorrespondingToFormat.self) { try formatter.unfixedDigits(string: "+1(234)56-77-8999") == "2345689" }
 }

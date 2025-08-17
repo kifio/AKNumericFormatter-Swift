@@ -1,8 +1,3 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
-
-import Foundation
-
 final class AKNumericFormatter {
     
     enum Mode: Int {
@@ -44,7 +39,7 @@ final class AKNumericFormatter {
     
     func indexOfFirstDigitOrPlaceholderInMask() -> String.Index? {
         
-        guard let numberIndex = mask.firstIndex(where: { $0.isWholeNumber }) else {
+        guard let numberIndex = mask.firstIndex(where: { $0.isDigit }) else {
             return mask.firstIndex(of: placeholder)
         }
         
@@ -56,42 +51,40 @@ final class AKNumericFormatter {
     }
     
     func format(_ string: String) -> String {
-        let onlyDigitsString = string.stringContainingOnlyDecimalDigits()
-        guard !onlyDigitsString.isEmpty else {
+        var onlyDigits: [Character] = string.filter { $0.isDigit }
+        
+        guard !onlyDigits.isEmpty else {
             return ""
         }
         
-        var formattedString = ""
-        var digitIndex = onlyDigitsString.startIndex
+        var out = [Character]()
         
         for maskCharacter in mask {
             if maskCharacter == placeholder {
-                if digitIndex < onlyDigitsString.endIndex {
-                    formattedString.append(onlyDigitsString[digitIndex])
-                    digitIndex = onlyDigitsString.index(after: digitIndex)
+                if !onlyDigits.isEmpty {
+                    out.append(onlyDigits.removeFirst())
                 } else {
                     break
                 }
-            } else if mode != .fillIn, maskCharacter.isNumber {
-                if digitIndex < onlyDigitsString.endIndex,
-                   maskCharacter == onlyDigitsString[digitIndex] {
-                    formattedString.append(maskCharacter)
-                    digitIndex = onlyDigitsString.index(after: digitIndex)
+            } else if mode != .fillIn, maskCharacter.isDigit {
+                if !onlyDigits.isEmpty, maskCharacter == onlyDigits.first {
+                    out.append(maskCharacter)
+                    onlyDigits.removeFirst()
                 } else if mode == .mixed {
-                    formattedString.append(maskCharacter)
+                    out.append(maskCharacter)
                 } else {
                     break
                 }
             } else {
-                formattedString.append(maskCharacter)
+                out.append(maskCharacter)
             }
         }
         
-        guard !formattedString.stringContainingOnlyDecimalDigits().isEmpty else {
+        guard out.first(where: { $0.isDigit }) != nil else {
             return ""
         }
         
-        return formattedString
+        return String(out)
     }
     
     func isFormatFulfilled(_ string: String) -> Bool {
@@ -100,7 +93,7 @@ final class AKNumericFormatter {
         }
         
         for index in string.indices {
-            let isMaskedCharacter = string[index].isWholeNumber && mask[index] == placeholder
+            let isMaskedCharacter = string[index].isDigit && mask[index] == placeholder
             let isUnmaskedCharacter = string[index] != placeholder && string[index] == mask[index]
             
             if !isMaskedCharacter && !isUnmaskedCharacter {
@@ -122,7 +115,7 @@ final class AKNumericFormatter {
         for index in string.indices {
             if string[index] == mask[index] {
                 continue
-            } else if string[index].isWholeNumber && mask[index] == placeholder {
+            } else if string[index].isDigit && mask[index] == placeholder {
                 out.append(string[index])
             } else {
                 throw FormatError.notCorrespondingToFormat
@@ -134,13 +127,10 @@ final class AKNumericFormatter {
     }
     
     func fillInMask(with digits: String) throws -> String {
-        try AKNumericFormatter.format(string: digits, mask: self.mask, placeholder: placeholder, mode: .fillIn)
+        AKNumericFormatter.format(string: digits, mask: self.mask, placeholder: placeholder, mode: .fillIn)
     }
 }
 
-extension String {
-    func stringContainingOnlyDecimalDigits() -> String {
-        let decimalDigitCharacterSet = CharacterSet.decimalDigits
-        return String(self.unicodeScalars.filter { decimalDigitCharacterSet.contains($0) })
-    }
+extension Character {
+    var isDigit: Bool { isWholeNumber && isASCII }
 }
