@@ -19,7 +19,7 @@ final class AKNumericFormatter {
     var mask: String
     var placeholder: Character
     
-    private init(mask: String, placeholder: Character, mode: AKNumericFormatter.Mode = .strict) {
+    private init(mask: String, placeholder: Character, mode: AKNumericFormatter.Mode) {
         self.mask = mask
         self.placeholder = placeholder
         self.mode = mode
@@ -27,15 +27,15 @@ final class AKNumericFormatter {
     
     class func format(
         string: String,
-        using mask: String,
+        mask: String,
         placeholder: Character,
         mode: AKNumericFormatter.Mode = .strict
-    ) throws -> String {
-        try formatter(with: mask, placeholder: placeholder, mode: mode).format(string: string)
+    ) -> String {
+        formatter(mask: mask, placeholder: placeholder, mode: mode).format(string)
     }
     
     class func formatter(
-        with mask: String,
+        mask: String,
         placeholder: Character,
         mode: AKNumericFormatter.Mode = .strict
     ) -> AKNumericFormatter {
@@ -55,11 +55,43 @@ final class AKNumericFormatter {
         return min(placeholderIndex, numberIndex)
     }
     
-    // Returns empty string if input string has no decimal digits
-    func format(string: String) throws -> String {
-//        var out = Array<Character>()
-//        out.reserveCapacity(string.count)
-        ""
+    func format(_ string: String) -> String {
+        let onlyDigitsString = string.stringContainingOnlyDecimalDigits()
+        guard !onlyDigitsString.isEmpty else {
+            return ""
+        }
+        
+        var formattedString = ""
+        var digitIndex = onlyDigitsString.startIndex
+        
+        for maskCharacter in mask {
+            if maskCharacter == placeholder {
+                if digitIndex < onlyDigitsString.endIndex {
+                    formattedString.append(onlyDigitsString[digitIndex])
+                    digitIndex = onlyDigitsString.index(after: digitIndex)
+                } else {
+                    break
+                }
+            } else if mode != .fillIn, maskCharacter.isNumber {
+                if digitIndex < onlyDigitsString.endIndex,
+                   maskCharacter == onlyDigitsString[digitIndex] {
+                    formattedString.append(maskCharacter)
+                    digitIndex = onlyDigitsString.index(after: digitIndex)
+                } else if mode == .mixed {
+                    formattedString.append(maskCharacter)
+                } else {
+                    break
+                }
+            } else {
+                formattedString.append(maskCharacter)
+            }
+        }
+        
+        guard !formattedString.stringContainingOnlyDecimalDigits().isEmpty else {
+            return ""
+        }
+        
+        return formattedString
     }
     
     func isFormatFulfilled(_ string: String) -> Bool {
@@ -102,6 +134,13 @@ final class AKNumericFormatter {
     }
     
     func fillInMask(with digits: String) throws -> String {
-        try AKNumericFormatter.format(string: digits, using: self.mask, placeholder: placeholder, mode: .fillIn)
+        try AKNumericFormatter.format(string: digits, mask: self.mask, placeholder: placeholder, mode: .fillIn)
+    }
+}
+
+extension String {
+    func stringContainingOnlyDecimalDigits() -> String {
+        let decimalDigitCharacterSet = CharacterSet.decimalDigits
+        return String(self.unicodeScalars.filter { decimalDigitCharacterSet.contains($0) })
     }
 }
