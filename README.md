@@ -1,81 +1,38 @@
-AKNumericFormatter
+AKNumericFormatter-Swift
 ==================
-Formatter for numerical fields and UITextField category to use it easily while editing.
+Just for fun reimplemetation of [AKNumericFormatter](https://github.com/blackm00n/AKNumericFormatter) 
+
+Code rewriten in Swift.
+Library available via SPM.
 
 Usage
 -----
 
-You can look at AKNumericFormatterSample project to see `AKNumericFormatter` in action.
+You can look at Sample project or exlore [tests](https://github.com/kifio/AKNumericFormatter-Swift/blob/master/Tests/AKNumericFormatter_SwiftTests/AKNumericFormatter_SwiftTests.swift) to see `AKNumericFormatter-Swift` in action.
 
 Formatter usage:
-```objc
-NSString* numericInput = @"12345678901";
-NSString* formattedInput = [AKNumericFormatter formatString:numericInput
-                                                  usingMask:@"+*(***)***-**-**"
-                                       placeholderCharacter:'*'];
+```swift
+let out = AKNumericFormatter.format(string: "12345678901", mask: "+*(***)***-**-**", placeholder: Character("*"))
 ```
-Of course you will get `@"+1(234)567-89-01"`
+Of course you will get `"+1(234)567-89-01"`
 
 To format `UITextField`'s input on-the-fly while the text is being entered:
-```objc
+```swift
 // Somewhere, let's say in viewDidLoad
-self.textField.numericFormatter = [AKNumericFormatter formatterWithMask:@"+*(***)***-**-**"
-                                                   placeholderCharacter:'*'];
+textField.numericFormatter = AKNumericFormatter.formatter(mask: "+1(999)*-**-**-x-**", placeholder: "*", mode: mode)
 ```
 Yep, it's easy and no subclassing.
 
-###iOS 5 Compatibility
-
-It's working on iOS 5, but you should help it a little bit. Call `alertDeleteBackwards` method
-in your `UITextField` delegate's `shouldChangeCharactersInRange:replacementString:` method
-when `replacementString` parameter has zero length:
-
-```objc
-#pragma mark - UITextFieldDelegate
-
--(BOOL)textField:(UITextField*)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString*)string
-{
-  if (string.length == 0 ) {
-    [self.textField alertDeleteBackwards];
-  }
-  return [super textField:textField shouldChangeCharactersInRange:range replacementString:string];
-}
-```
+###Compatibility
+Minimum supported iOS version is iOS 15 now. Maybe it can be less, but i have no devices to test.
+Public API may be a bit different with original library. Not drastically. I suppose it would take 5-7 minutes to completely replace the library in your code.
 
 Installation
 ------------
+In Xcode add the dependency to your project via File > Add Packages > Search or Enter Package URL and use the following url:
+https://github.com/kifio/AKNumericFormatter-Swift.git
 
-The best approach is to use [CocoaPods](http://cocoapods.org/).
-
-Install CocoaPods gem if it's not installed yet and setup its enviroment:
-
-    $ [sudo] gem install cocoapods
-    $ pod setup
-
-Go to the directory containing your project's .xcodeproj file and create Podfile:
-
-    $ cd ~/Projects/MyProject
-    $ vim Podfile
-  
-Add the following lines to Podfile:
-
-```ruby
-platform :ios
-pod 'AKNumericFormatter'
-```
-  
-Finally install your pod dependencies:
-
-    $ [sudo] pod install
-    
-That's all, now open just created .xcworkspace file
-
-Contact
--------
-Aleksey Kozhevnikov
-* [blackm00n on GitHub](https://github.com/blackm00n)
-* aleksey.kozhevnikov@gmail.com
-* [@kozhevnikoff](https://twitter.com/kozhevnikoff)
-
+Once added, import the package in your code:
+import AKNumericFormatter_Swift
 
 
