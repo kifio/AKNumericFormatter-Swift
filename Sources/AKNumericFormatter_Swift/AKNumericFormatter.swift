@@ -147,21 +147,14 @@ extension UITextField {
             return objc_getAssociatedObject(self, &AKNumericFormatter.NumericFormatterKey) as? AKNumericFormatter
         }
         set {
-            // Swizzle deleteBackward on first assignment
-            struct SwizzleOnce {
-                @MainActor static var token: Bool = {
-                    let originalSelector = #selector(deleteBackward)
-                    let swizzledSelector = #selector(deleteBackwardSwizzle)
-                    if let originalMethod = class_getInstanceMethod(UITextField.self, originalSelector),
-                       let swizzledMethod = class_getInstanceMethod(UITextField.self, swizzledSelector) {
-                        method_exchangeImplementations(originalMethod, swizzledMethod)
-                    }
-                    return true
-                }()
+            let originalSelector = #selector(deleteBackward)
+            let swizzledSelector = #selector(deleteBackwardSwizzle)
+            if let originalMethod = class_getInstanceMethod(UITextField.self, originalSelector),
+               let swizzledMethod = class_getInstanceMethod(UITextField.self, swizzledSelector) {
+                method_exchangeImplementations(originalMethod, swizzledMethod)
             }
-            _ = SwizzleOnce.token
 
-            objc_setAssociatedObject(self, &AKNumericFormatter.NumericFormatterKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, &AKNumericFormatter.NumericFormatterKey, newValue, .OBJC_ASSOCIATION_RETAIN)
             if newValue != nil {
                 self.addTarget(self, action: #selector(handleTextChanged(_:)), for: .editingChanged)
             } else {
@@ -195,7 +188,7 @@ extension UITextField {
         deleteBackwardSwizzle()
     }
     
-    @objc func handleTextChanged(_ notification: Notification?) {
+    @objc func handleTextChanged(_ sender: Any?) {
         guard !isFormatting, let formatter = self.numericFormatter else { return }
         isFormatting = true
         defer { isFormatting = false; handleDeleteBackwards = false }
