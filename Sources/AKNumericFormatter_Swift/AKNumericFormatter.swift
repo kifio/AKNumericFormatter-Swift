@@ -3,18 +3,10 @@ import ObjectiveC
 
 public final class AKNumericFormatter {
     
-    @MainActor fileprivate static var NumericFormatterKey: UInt8 = 0
-    @MainActor fileprivate static var HandleDeleteBackwardsKey: UInt8 = 1
-    @MainActor fileprivate static var IsFormattingKey: UInt8 = 2
-    
     public enum Mode: Int {
         case strict
         case fillIn
         case mixed
-    }
-
-    enum FormatError: Error {
-        case notCorrespondingToFormat
     }
     
     public let mode: AKNumericFormatter.Mode
@@ -42,17 +34,6 @@ public final class AKNumericFormatter {
         mode: AKNumericFormatter.Mode = .strict
     ) -> AKNumericFormatter {
         AKNumericFormatter(mask: mask, placeholder: placeholder, mode: mode)
-    }
-    
-    func indexOfFirstDigitOrPlaceholderInMask() -> Int {
-        let numberIndex: Int? = mask.enumerated().first { index, character in character.isDigit }?.offset
-        let placeholderIndex: Int? = mask.enumerated().first { index, character in character == placeholder }?.offset
-        
-        guard let numberIndex, let placeholderIndex else {
-            return placeholderIndex ?? -1
-        }
-        
-        return min(placeholderIndex, numberIndex)
     }
     
     public func format(_ string: String) -> String {
@@ -108,10 +89,21 @@ public final class AKNumericFormatter {
         
         return true
     }
+    
+    func indexOfFirstDigitOrPlaceholderInMask() -> Int {
+        let numberIndex: Int? = mask.enumerated().first { index, character in character.isDigit }?.offset
+        let placeholderIndex: Int? = mask.enumerated().first { index, character in character == placeholder }?.offset
+        
+        guard let numberIndex, let placeholderIndex else {
+            return placeholderIndex ?? -1
+        }
+        
+        return min(placeholderIndex, numberIndex)
+    }
 
-    func unfixedDigits(string: String) throws -> String {
+    func unfixedDigits(string: String) -> String? {
         guard string.count <= mask.count else {
-            throw FormatError.notCorrespondingToFormat
+            return nil
         }
         
         var out = Array<Character>()
@@ -123,16 +115,32 @@ public final class AKNumericFormatter {
             } else if string[index].isDigit && mask[index] == placeholder {
                 out.append(string[index])
             } else {
-                throw FormatError.notCorrespondingToFormat
+                return nil
             }
         }
         
         return String(out)
-
     }
-    
-    func fillInMask(with digits: String) throws -> String {
-        AKNumericFormatter.format(string: digits, mask: self.mask, placeholder: placeholder, mode: .fillIn)
+
+    func minPrefixLengthContainingCharsCount(
+        _ source: any BidirectionalCollection<Character>,
+        _ offsetDigitsCount: inout Int
+    ) -> Int {
+        var result = 0
+        
+        source.forEach { character in
+            if offsetDigitsCount == 0 {
+                return
+            }
+            
+            result += 1
+            
+            if character.isDigit {
+                offsetDigitsCount -= 1
+            }
+        }
+        
+        return result > 0 ? result : -1
     }
 }
 
@@ -141,10 +149,14 @@ extension Character {
 }
 
 extension UITextField {
+
+    @MainActor private static var NumericFormatterKey: UInt8 = 0
+    @MainActor private static var HandleDeleteBackwardsKey: UInt8 = 1
+    @MainActor private static var IsFormattingKey: UInt8 = 2
     
     public var numericFormatter: AKNumericFormatter? {
         get {
-            return objc_getAssociatedObject(self, &AKNumericFormatter.NumericFormatterKey) as? AKNumericFormatter
+            return objc_getAssociatedObject(self, &UITextField.NumericFormatterKey) as? AKNumericFormatter
         }
         set {
             let originalSelector = #selector(deleteBackward)
@@ -154,7 +166,7 @@ extension UITextField {
                 method_exchangeImplementations(originalMethod, swizzledMethod)
             }
 
-            objc_setAssociatedObject(self, &AKNumericFormatter.NumericFormatterKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+            objc_setAssociatedObject(self, &UITextField.NumericFormatterKey, newValue, .OBJC_ASSOCIATION_RETAIN)
             if newValue != nil {
                 self.addTarget(self, action: #selector(handleTextChanged(_:)), for: .editingChanged)
             } else {
@@ -165,22 +177,21 @@ extension UITextField {
     
     var handleDeleteBackwards: Bool {
         get {
-            return (objc_getAssociatedObject(self, &AKNumericFormatter.HandleDeleteBackwardsKey) as? Bool) ?? false
+            return (objc_getAssociatedObject(self, &UITextField.HandleDeleteBackwardsKey) as? Bool) ?? false
         }
         set {
-            objc_setAssociatedObject(self, &AKNumericFormatter.HandleDeleteBackwardsKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, &UITextField.HandleDeleteBackwardsKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
     
     var isFormatting: Bool {
         get {
-            return (objc_getAssociatedObject(self, &AKNumericFormatter.IsFormattingKey) as? Bool) ?? false
+            return (objc_getAssociatedObject(self, &UITextField.IsFormattingKey) as? Bool) ?? false
         }
         set {
-            objc_setAssociatedObject(self, &AKNumericFormatter.IsFormattingKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, &UITextField.IsFormattingKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
-    
     
     @objc func deleteBackwardSwizzle() {
         alertDeleteBackwards()
@@ -191,49 +202,68 @@ extension UITextField {
     @objc func handleTextChanged(_ sender: Any?) {
         guard !isFormatting, let formatter = self.numericFormatter else { return }
         isFormatting = true
-        defer { isFormatting = false; handleDeleteBackwards = false }
         
-        guard let text = self.text else { return }
+        defer {
+            isFormatting = false;
+            handleDeleteBackwards = false
+        }
+        
+        guard
+            var text,
+            var selectedTextRange
+        else { return }
         
         // Save caret position
-        let caretHeadOffset = offset(from: beginningOfDocument, to: selectedTextRange?.start ?? endOfDocument)
-        let caretTailOffset = offset(from: selectedTextRange?.end ?? beginningOfDocument, to: endOfDocument)
-        var offsetDigitsCount: Int = 0
-        if handleDeleteBackwards {
-            offsetDigitsCount = text.prefix(caretHeadOffset).countDecimalDigits()
+        let modifiedSubsting = if handleDeleteBackwards {
+            text.prefix(offset(from: beginningOfDocument, to: selectedTextRange.start))
         } else {
-            offsetDigitsCount = text.suffix(text.count - caretTailOffset).countDecimalDigits()
+            text.suffix(offset(from: selectedTextRange.end, to: endOfDocument))
         }
-
+                
         // Format text
         let newText = formatter.format(text)
+        
         if text != newText {
             self.text = newText
             sendActions(for: .editingChanged)
         }
 
         // Restore caret position
-        let restoredText = self.text ?? ""
+        text = self.text ?? ""
+        
         var newCaretOffset: Int = 0
+        var offsetDigitsCount = modifiedSubsting.filter { $0.isDigit }.count
+
         if handleDeleteBackwards {
-            newCaretOffset = restoredText.minPrefixLengthContainingDecimalDigitsCount(offsetDigitsCount)
+            newCaretOffset = formatter.minPrefixLengthContainingCharsCount(text, &offsetDigitsCount)
         } else {
-            newCaretOffset = restoredText.count - restoredText.minSuffixLengthContainingDecimalDigitsCount(offsetDigitsCount)
+            newCaretOffset = text.count - formatter.minPrefixLengthContainingCharsCount(text.reversed(), &offsetDigitsCount)
         }
+        
         if newCaretOffset < formatter.indexOfFirstDigitOrPlaceholderInMask() {
-            newCaretOffset = restoredText.count
+            newCaretOffset = text.count
         }
-        if newCaretOffset < restoredText.count {
-            let decimalDigits = CharacterSet.decimalDigits
-            let maskHasDigitsAfterCaret = formatter.mask.dropFirst(newCaretOffset).rangeOfCharacter(from: decimalDigits) != nil
-            let textHasOnlyThrashAfterCaret = restoredText.dropFirst(newCaretOffset).rangeOfCharacter(from: decimalDigits) == nil
+        
+        if newCaretOffset < text.count {
+            
+            let maskHasDigitsAfterCaret = formatter.mask
+                .dropFirst(newCaretOffset)
+                .contains(where: { $0.isDigit } )
+                        
+            let textHasOnlyThrashAfterCaret = text
+                .dropFirst(newCaretOffset)
+                .contains(where: { !$0.isDigit } )
+            
             if textHasOnlyThrashAfterCaret || maskHasDigitsAfterCaret {
-                self.text = String(restoredText.prefix(newCaretOffset))
+                self.text = String(text.prefix(newCaretOffset))
                 sendActions(for: .editingChanged)
             }
         }
-        if let newPosition = position(from: beginningOfDocument, offset: newCaretOffset),
-           let textRange = textRange(from: newPosition, to: newPosition) {
+        
+        if
+            let newPosition = position(from: beginningOfDocument, offset: newCaretOffset),
+            let textRange = textRange(from: newPosition, to: newPosition)
+        {
             selectedTextRange = textRange
         }
     }
@@ -246,37 +276,5 @@ extension UITextField {
     
     func alertDeleteBackwards() {
         handleDeleteBackwards = true
-    }
-}
-
-// Helpers for counting decimal digits and prefix/suffix calculations
-extension Substring {
-    func countDecimalDigits() -> Int {
-        return self.filter { $0.isDigit }.count
-    }
-}
-
-extension String {
-
-    func minPrefixLengthContainingDecimalDigitsCount(_ digitsCount: Int) -> Int {
-        var remaining = digitsCount
-        for (i, c) in self.enumerated() {
-            if c.isWholeNumber {
-                remaining -= 1
-                if remaining == 0 { return i + 1 }
-            }
-        }
-        return -1
-    }
-    
-    func minSuffixLengthContainingDecimalDigitsCount(_ digitsCount: Int) -> Int {
-        var remaining = digitsCount
-        for (i, c) in self.reversed().enumerated() {
-            if c.isWholeNumber {
-                remaining -= 1
-                if remaining == 0 { return i + 1 }
-            }
-        }
-        return -1
     }
 }

@@ -68,7 +68,7 @@ class ViewController: UIViewController {
             textField.numericFormatter = nil
         } else {
             let mode: AKNumericFormatter.Mode = (sender.selectedSegmentIndex == 1) ? .mixed : .strict
-            textField.numericFormatter = AKNumericFormatter.formatter(mask: "+1(***)***-****", placeholder: "*", mode: mode)
+            textField.numericFormatter = AKNumericFormatter.formatter(mask: "+1(999)*-**-**-x-**", placeholder: "*", mode: mode)
         }
         updateFormatterDependentUI()
     }

@@ -83,6 +83,7 @@ import XCTest
 @Test
 func unfixedDigits() async throws {
     let formatter = AKNumericFormatter.formatter(mask: "+1(xxx)xx-77-xx", placeholder: Character("x"))
-    #expect(throws: Never.self) { try formatter.unfixedDigits(string: "+1(234)56-77-89") == "2345689" }
-    #expect(throws: AKNumericFormatter.FormatError.notCorrespondingToFormat.self) { try formatter.unfixedDigits(string: "+1(234)56-77-8999") == "2345689" }
+    #expect(formatter.unfixedDigits(string: "+1(234)56-77-89") == "2345689")
+    #expect(formatter.unfixedDigits(string: "+1(234)56-77-8999") == nil)
+    #expect(formatter.unfixedDigits(string: "+1(234)aa-77-bb") == nil)
 }
