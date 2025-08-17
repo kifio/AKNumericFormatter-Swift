@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="4514" systemVersion="13A603" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" initialViewController="vXZ-lx-hvc">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3747"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="ufC-wZ-h7g">
+            <objects>
+                <viewController id="vXZ-lx-hvc" customClass="ViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="TI9-Ie-KwT"/>
+                        <viewControllerLayoutGuide type="bottom" id="RcH-Qu-aLR"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="kh9-bI-dsS">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="whileEditing" translatesAutoresizingMaskIntoConstraints="NO" id="QXU-fJ-Lo9">
+                                <rect key="frame" x="20" y="64" width="280" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits" keyboardType="numberPad"/>
+                                <connections>
+                                    <action selector="textFieldEditingChanged:" destination="vXZ-lx-hvc" eventType="editingChanged" id="tP6-I3-ycH"/>
+                                </connections>
+                            </textField>
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="5t8-jv-FmC">
+                                <rect key="frame" x="42" y="28" width="236" height="29"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <segments>
+                                    <segment title="None"/>
+                                    <segment title="Mixed Fmt"/>
+                                    <segment title="Strict Fmt"/>
+                                </segments>
+                                <connections>
+                                    <action selector="segmentChanged:" destination="vXZ-lx-hvc" eventType="valueChanged" id="VRW-1m-UAm"/>
+                                </connections>
+                            </segmentedControl>
+                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Format fulfilled: NO" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="g4a-ht-tM6">
+                                <rect key="frame" x="20" y="102" width="280" height="21"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="g4a-ht-tM6" firstAttribute="top" secondItem="QXU-fJ-Lo9" secondAttribute="bottom" constant="8" symbolic="YES" id="3AJ-Ou-TC2"/>
+                            <constraint firstAttribute="trailing" secondItem="QXU-fJ-Lo9" secondAttribute="trailing" constant="20" symbolic="YES" id="5X5-nz-r8k"/>
+                            <constraint firstItem="QXU-fJ-Lo9" firstAttribute="top" secondItem="5t8-jv-FmC" secondAttribute="bottom" constant="8" symbolic="YES" id="Aq8-8y-fAQ"/>
+                            <constraint firstAttribute="centerX" secondItem="5t8-jv-FmC" secondAttribute="centerX" id="Bj7-UA-kpi"/>
+                            <constraint firstItem="QXU-fJ-Lo9" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leading" constant="20" symbolic="YES" id="HtC-kK-Xn1"/>
+                            <constraint firstAttribute="trailing" secondItem="g4a-ht-tM6" secondAttribute="trailing" constant="20" symbolic="YES" id="Uzd-Ks-9Tj"/>
+                            <constraint firstItem="5t8-jv-FmC" firstAttribute="top" secondItem="TI9-Ie-KwT" secondAttribute="bottom" constant="20" symbolic="YES" id="ea4-ri-8hP"/>
+                            <constraint firstItem="g4a-ht-tM6" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leading" constant="20" symbolic="YES" id="ohD-DZ-Wso"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="formatFulfilledLabel" destination="g4a-ht-tM6" id="mbQ-rR-fUv"/>
+                        <outlet property="textField" destination="QXU-fJ-Lo9" id="cU5-61-Ygc"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>
+            </objects>
+        </scene>
+    </scenes>
+    <simulatedMetricsContainer key="defaultSimulatedMetrics">
+        <simulatedStatusBarMetrics key="statusBar"/>
+        <simulatedOrientationMetrics key="orientation"/>
+        <simulatedScreenMetrics key="destination" type="retina4"/>
+    </simulatedMetricsContainer>
+</document>
