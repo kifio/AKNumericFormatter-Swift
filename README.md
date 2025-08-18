@@ -1,6 +1,6 @@
 AKNumericFormatter-Swift
 ==================
-Just for fun reimplemetation of [AKNumericFormatter](https://github.com/blackm00n/AKNumericFormatter) to replace objc code from some product application.
+Just for fun reimplemetation of [AKNumericFormatter](https://github.com/blackm00n/AKNumericFormatter) to replace objc code in some product application.
 
 Code rewriten in Swift.
 Library available via SPM.
