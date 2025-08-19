@@ -274,7 +274,7 @@ extension UITextField {
         handleTextChanged(nil)
     }
     
-    func alertDeleteBackwards() {
+    public func alertDeleteBackwards() {
         handleDeleteBackwards = true
     }
 }
